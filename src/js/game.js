@@ -28,6 +28,7 @@ function createGame() {
     score: 0,
     lives: 3,
     dotsRemaining: dots,
+    playingTime: 0,
     grid,
     pacman: {
       x: PACMAN_START.x,
@@ -42,6 +43,10 @@ function createGame() {
       dir: 'up',
       speed: GHOST_SPEED,
       kind: g.kind,
+      color: g.color,
+      releaseDelay: g.releaseDelay,
+      released: g.releaseDelay === 0,
+      patrolTarget: g.kind === 'patrol' ? { x: 26, y: 1 } : null,
     } ) ),
   };
 }
@@ -159,6 +164,8 @@ function moveGhost( game, g ) {
 }
 
 function resetPositions( game ) {
+  game.playingTime = 0;
+
   const p = game.pacman;
   p.x = PACMAN_START.x;
   p.y = PACMAN_START.y;
@@ -168,6 +175,8 @@ function resetPositions( game ) {
     g.x = GHOST_STARTS[ i ].x;
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
+    g.released = g.releaseDelay === 0;
+    g.patrolTarget = g.kind === 'patrol' ? { x: 26, y: 1 } : null;
   } );
 }
 
