@@ -66,20 +66,22 @@ function drawDoor( ctx, grid ) {
   ctx.stroke();
 }
 
-function drawDots( ctx, grid ) {
+function drawDots( ctx, grid, playingTime ) {
   ctx.fillStyle = DOT_COLOR;
   for ( let y = 0; y < grid.length; y++ ) {
     for ( let x = 0; x < grid[ 0 ].length; x++ ) {
-      if ( grid[ y ][ x ] !== 2 ) continue;
+      const tile = grid[ y ][ x ];
+      if ( tile !== 2 && tile !== 4 ) continue;
+      if ( tile === 4 && Math.floor( playingTime / 500 ) % 2 === 1 ) continue;
       const { cx, cy } = cellCenter( x, y );
       ctx.beginPath();
-      ctx.arc( cx, cy, 2.5, 0, Math.PI * 2 );
+      ctx.arc( cx, cy, tile === 4 ? 6 : 2.5, 0, Math.PI * 2 );
       ctx.fill();
     }
   }
 }
 
-function drawPacman( ctx, p, frame ) {
+function drawPacman( ctx, p, frame, powerPulseRemaining ) {
   const { cx, cy } = cellCenter( p.x, p.y );
   let rot = 0;
   if ( p.dir === 'right' ) rot = 0;
@@ -89,11 +91,13 @@ function drawPacman( ctx, p, frame ) {
 
   // Boca animada: abre/cierra con el frame.
   const open = ( Math.sin( frame * 0.3 ) * 0.5 + 0.5 ) * 0.28 + 0.02;
+  const pulseProgress = 1 - powerPulseRemaining / 500;
+  const pulseScale = powerPulseRemaining > 0 ? 1 + Math.sin( pulseProgress * Math.PI ) * 0.25 : 1;
 
   ctx.fillStyle = '#ffff00';
   ctx.beginPath();
   ctx.moveTo( cx, cy );
-  ctx.arc( cx, cy, TILE / 2 - 1, rot + open * Math.PI, rot - open * Math.PI );
+  ctx.arc( cx, cy, ( TILE / 2 - 1 ) * pulseScale, rot + open * Math.PI, rot - open * Math.PI );
   ctx.closePath();
   ctx.fill();
 }
@@ -154,8 +158,8 @@ function draw( ctx, game, frame ) {
 
   drawWalls( ctx, grid );
   drawDoor( ctx, grid );
-  drawDots( ctx, grid );
-  drawPacman( ctx, game.pacman, frame );
+  drawDots( ctx, grid, game.playingTime );
+  drawPacman( ctx, game.pacman, frame, game.powerPulseRemaining );
   game.ghosts.forEach( ( g ) => drawGhost( ctx, g, g.color ) );
   drawHUD( ctx, game, W );
 }
