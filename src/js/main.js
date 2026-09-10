@@ -9,6 +9,7 @@ const actionBtn = document.getElementById( 'action-btn' );
 let game = createGame();
 let frame = 0;
 let previousTimestamp = null;
+let audioContext = null;
 
 const KEY_DIR = {
   ArrowLeft: 'left',
@@ -40,12 +41,45 @@ function startGame() {
 
 if ( actionBtn ) actionBtn.addEventListener( 'click', startGame );
 
+function playPowerPelletSound() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if ( !AudioContextClass ) return;
+
+    if ( !audioContext ) audioContext = new AudioContextClass();
+    if ( audioContext.state === 'suspended' ) audioContext.resume().catch( () => {} );
+
+    const now = audioContext.currentTime;
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime( 220, now );
+    oscillator.frequency.linearRampToValueAtTime( 440, now + 0.15 );
+    gain.gain.setValueAtTime( 0, now );
+    gain.gain.linearRampToValueAtTime( 0.1, now + 0.01 );
+    gain.gain.linearRampToValueAtTime( 0, now + 0.15 );
+    oscillator.connect( gain );
+    gain.connect( audioContext.destination );
+    oscillator.start( now );
+    oscillator.stop( now + 0.15 );
+  } catch ( error ) {
+    // El audio es opcional: el juego debe seguir si el navegador lo bloquea.
+  }
+}
+
+function playPendingPowerPelletSound() {
+  if ( !game.powerPelletSoundPending ) return;
+  game.powerPelletSoundPending = false;
+  playPowerPelletSound();
+}
+
 function loop( timestamp ) {
   const elapsedTime = previousTimestamp === null ? 0 : timestamp - previousTimestamp;
   previousTimestamp = timestamp;
   frame++;
   if ( game.state === 'playing' ) {
     update( game, elapsedTime );
+    playPendingPowerPelletSound();
     if ( game.state === 'won' ) showOverlay( 'GANASTE', 'win', 'Reiniciar' );
     else if ( game.state === 'lost' ) showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
   }
