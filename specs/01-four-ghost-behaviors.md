@@ -1,6 +1,6 @@
 # SPEC 01 — Four Ghost Behaviors
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** None
 > **Date:** 2026-09-10
 > **Objective:** Add four distinct ghost behaviors with staggered releases while keeping the existing Pac-Man game playable.
