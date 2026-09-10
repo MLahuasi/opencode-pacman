@@ -8,6 +8,7 @@ const actionBtn = document.getElementById( 'action-btn' );
 
 let game = createGame();
 let frame = 0;
+let previousTimestamp = null;
 
 const KEY_DIR = {
   ArrowLeft: 'left',
@@ -39,10 +40,12 @@ function startGame() {
 
 if ( actionBtn ) actionBtn.addEventListener( 'click', startGame );
 
-function loop() {
+function loop( timestamp ) {
+  const elapsedTime = previousTimestamp === null ? 0 : timestamp - previousTimestamp;
+  previousTimestamp = timestamp;
   frame++;
   if ( game.state === 'playing' ) {
-    update( game );
+    update( game, elapsedTime );
     if ( game.state === 'won' ) showOverlay( 'GANASTE', 'win', 'Reiniciar' );
     else if ( game.state === 'lost' ) showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
   }
