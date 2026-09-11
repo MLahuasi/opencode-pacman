@@ -73,6 +73,41 @@ function playPendingPowerPelletSound() {
   playPowerPelletSound();
 }
 
+function playGhostEatenSound( startTime ) {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if ( !AudioContextClass ) return;
+
+    if ( !audioContext ) audioContext = new AudioContextClass();
+    if ( audioContext.state === 'suspended' ) audioContext.resume().catch( () => {} );
+
+    const now = startTime === null ? audioContext.currentTime : startTime;
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime( 440, now );
+    oscillator.frequency.linearRampToValueAtTime( 880, now + 0.15 );
+    gain.gain.setValueAtTime( 0, now );
+    gain.gain.linearRampToValueAtTime( 0.1, now + 0.01 );
+    gain.gain.linearRampToValueAtTime( 0, now + 0.15 );
+    oscillator.connect( gain );
+    gain.connect( audioContext.destination );
+    oscillator.start( now );
+    oscillator.stop( now + 0.15 );
+  } catch ( error ) {
+    // El audio es opcional: el juego debe seguir si el navegador lo bloquea.
+  }
+}
+
+function playPendingGhostEatenSounds() {
+  const sounds = game.ghostEatenSoundsPending;
+  game.ghostEatenSoundsPending = 0;
+  for ( let i = 0; i < sounds; i++ ) {
+    const startTime = audioContext ? audioContext.currentTime + i * 0.15 : null;
+    playGhostEatenSound( startTime );
+  }
+}
+
 function loop( timestamp ) {
   const elapsedTime = previousTimestamp === null ? 0 : timestamp - previousTimestamp;
   previousTimestamp = timestamp;
@@ -80,6 +115,7 @@ function loop( timestamp ) {
   if ( game.state === 'playing' ) {
     update( game, elapsedTime );
     playPendingPowerPelletSound();
+    playPendingGhostEatenSounds();
     if ( game.state === 'won' ) showOverlay( 'GANASTE', 'win', 'Reiniciar' );
     else if ( game.state === 'lost' ) showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
   }
