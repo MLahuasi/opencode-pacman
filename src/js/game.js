@@ -183,6 +183,56 @@ function shortestPathDirection( game, g, target, choices ) {
   return choices[ 0 ];
 }
 
+function shortestPathDistance( grid, start, target, dir ) {
+  const width = grid[ 0 ].length;
+  const queue = [ { ...start, dir, distance: 0 } ];
+  const visited = new Set( [ `${start.x},${start.y},${dir}` ] );
+
+  for ( let i = 0; i < queue.length; i++ ) {
+    const current = queue[ i ];
+    if ( current.x === target.x && current.y === target.y ) return current.distance;
+
+    for ( const nextDir of Object.keys( DIRS ) ) {
+      if ( nextDir === OPPOSITE[ current.dir ] ) continue;
+      if ( !canMove( grid, current.x, current.y, nextDir, 'ghost' ) ) continue;
+      const d = DIRS[ nextDir ];
+      const next = { x: current.x + d.x, y: current.y + d.y };
+      wrapTunnel( next, width );
+      const key = `${next.x},${next.y},${nextDir}`;
+      if ( visited.has( key ) ) continue;
+      visited.add( key );
+      queue.push( { ...next, dir: nextDir, distance: current.distance + 1 } );
+    }
+  }
+
+  return null;
+}
+
+function frightenedDirection( game, g, choices ) {
+  const grid = game.grid;
+  const width = grid[ 0 ].length;
+  const target = { x: Math.round( game.pacman.x ), y: Math.round( game.pacman.y ) };
+  let furthest = -1;
+  let directions = [];
+
+  for ( const dir of choices ) {
+    const d = DIRS[ dir ];
+    const next = { x: Math.round( g.x ) + d.x, y: Math.round( g.y ) + d.y };
+    wrapTunnel( next, width );
+    const distance = shortestPathDistance( grid, next, target, dir );
+    if ( distance === null ) continue;
+    if ( distance > furthest ) {
+      furthest = distance;
+      directions = [ dir ];
+    } else if ( distance === furthest ) {
+      directions.push( dir );
+    }
+  }
+
+  const candidates = directions.length ? directions : choices;
+  return candidates[ Math.floor( Math.random() * candidates.length ) ];
+}
+
 function decideGhost( game, g ) {
   const grid = game.grid;
   const p = game.pacman;
@@ -191,6 +241,11 @@ function decideGhost( game, g ) {
   );
   // Sin salida (callejon): permitir el giro de 180.
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
+
+  if ( g.released && game.frightenedRemaining > 0 ) {
+    g.dir = frightenedDirection( game, g, choices );
+    return;
+  }
 
   if ( g.kind === 'random' ) {
     g.dir = choices[ Math.floor( Math.random() * choices.length ) ];
