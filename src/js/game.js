@@ -92,6 +92,14 @@ function wrapTunnel( a, width ) {
   }
 }
 
+function activateFrightenedMode( game ) {
+  game.frightenedRemaining = 10000;
+  game.frightenedGhostsEaten = 0;
+  game.ghosts.forEach( ( g ) => {
+    if ( g.released ) g.dir = OPPOSITE[ g.dir ];
+  } );
+}
+
 function movePacman( game ) {
   const p = game.pacman;
   const grid = game.grid;
@@ -115,6 +123,7 @@ function movePacman( game ) {
       if ( isPowerPellet ) {
         game.powerPulseRemaining = 500;
         game.powerPelletSoundPending = true;
+        activateFrightenedMode( game );
       }
     }
     // Si no puede seguir, se detiene en la celda.
@@ -256,8 +265,9 @@ function update( game, elapsedTime ) {
   if ( game.state === 'playing' ) {
     game.playingTime += elapsedTime;
     game.powerPulseRemaining = Math.max( 0, game.powerPulseRemaining - elapsedTime );
+    game.frightenedRemaining = Math.max( 0, game.frightenedRemaining - elapsedTime );
     game.ghosts.forEach( ( g ) => {
-      if ( game.playingTime >= g.releaseDelay ) g.released = true;
+      if ( game.playingTime >= g.releaseAt ) g.released = true;
     } );
   }
 
