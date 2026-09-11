@@ -12,6 +12,7 @@ const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 
 const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
+const GHOST_EATEN_SCORES = [ 200, 400, 800, 1600 ];
 
 // Crea una partida nueva. Copia MAZE (pristino) a game.grid para poder comer
 // dots sin destruir el original, y reiniciar.
@@ -316,11 +317,29 @@ function collides( a, b ) {
   return Math.abs( a.x - b.x ) < 0.5 && Math.abs( a.y - b.y ) < 0.5;
 }
 
+function eatGhost( game, g, index ) {
+  const score = GHOST_EATEN_SCORES[ Math.min( game.frightenedGhostsEaten, 3 ) ];
+  game.score += score;
+  game.frightenedGhostsEaten++;
+  game.ghostEatenSoundsPending++;
+  game.floatingScores.push( { x: g.x, y: g.y, score, remaining: 1000 } );
+
+  g.x = GHOST_STARTS[ index ].x;
+  g.y = GHOST_STARTS[ index ].y;
+  g.dir = 'up';
+  g.released = false;
+  g.releaseAt = game.playingTime + g.releaseDelay;
+  g.patrolTarget = g.kind === 'patrol' ? { x: 26, y: 1 } : null;
+}
+
 function update( game, elapsedTime ) {
   if ( game.state === 'playing' ) {
     game.playingTime += elapsedTime;
     game.powerPulseRemaining = Math.max( 0, game.powerPulseRemaining - elapsedTime );
     game.frightenedRemaining = Math.max( 0, game.frightenedRemaining - elapsedTime );
+    game.floatingScores = game.floatingScores
+      .map( ( floatingScore ) => ( { ...floatingScore, remaining: floatingScore.remaining - elapsedTime } ) )
+      .filter( ( floatingScore ) => floatingScore.remaining > 0 );
     game.ghosts.forEach( ( g ) => {
       if ( game.playingTime >= g.releaseAt ) g.released = true;
     } );
@@ -329,8 +348,13 @@ function update( game, elapsedTime ) {
   movePacman( game );
   game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
 
-  for ( const g of game.ghosts ) {
+  for ( let i = 0; i < game.ghosts.length; i++ ) {
+    const g = game.ghosts[ i ];
     if ( collides( game.pacman, g ) ) {
+      if ( g.released && game.frightenedRemaining > 0 ) {
+        eatGhost( game, g, i );
+        continue;
+      }
       game.lives--;
       if ( game.lives <= 0 ) {
         game.state = 'lost';
