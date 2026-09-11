@@ -31,6 +31,10 @@ function createGame() {
     playingTime: 0,
     powerPulseRemaining: 0,
     powerPelletSoundPending: false,
+    frightenedRemaining: 0,
+    frightenedGhostsEaten: 0,
+    ghostEatenSoundsPending: 0,
+    floatingScores: [],
     grid,
     pacman: {
       x: PACMAN_START.x,
@@ -48,6 +52,7 @@ function createGame() {
       color: g.color,
       releaseDelay: g.releaseDelay,
       released: g.releaseDelay === 0,
+      releaseAt: g.releaseDelay,
       patrolTarget: g.kind === 'patrol' ? { x: 26, y: 1 } : null,
     } ) ),
   };
@@ -223,6 +228,10 @@ function resetPositions( game ) {
   game.playingTime = 0;
   game.powerPulseRemaining = 0;
   game.powerPelletSoundPending = false;
+  game.frightenedRemaining = 0;
+  game.frightenedGhostsEaten = 0;
+  game.ghostEatenSoundsPending = 0;
+  game.floatingScores = [];
 
   const p = game.pacman;
   p.x = PACMAN_START.x;
@@ -234,6 +243,7 @@ function resetPositions( game ) {
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
     g.released = g.releaseDelay === 0;
+    g.releaseAt = game.playingTime + g.releaseDelay;
     g.patrolTarget = g.kind === 'patrol' ? { x: 26, y: 1 } : null;
   } );
 }
