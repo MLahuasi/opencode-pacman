@@ -1,6 +1,6 @@
 # SPEC 02 — Four Power Pellets
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** None
 > **Date:** 2026-09-10
 > **Objective:** Add four collectible Power Pellets in the classic maze corners with visual, audio, and Pac-Man pulse feedback.
