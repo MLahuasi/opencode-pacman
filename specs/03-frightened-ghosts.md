@@ -1,6 +1,6 @@
 # SPEC 03 — Frightened Ghosts
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 02
 > **Date:** 2026-09-10
 > **Objective:** Make Power Pellets frighten ghosts for ten seconds so Pac-Man can eat them for escalating scores with visual and audio feedback.
