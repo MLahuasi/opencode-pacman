@@ -102,13 +102,18 @@ function drawPacman( ctx, p, frame, powerPulseRemaining ) {
   ctx.fill();
 }
 
-function drawGhost( ctx, g, color ) {
+function drawGhost( ctx, g, game ) {
   const { cx, cy } = cellCenter( g.x, g.y );
   const r = TILE / 2 - 1;
   const top = cy - r;
   const bottom = cy + r;
   const left = cx - r;
   const right = cx + r;
+  const frightened = g.released && game.frightenedRemaining > 0;
+  const blinkElapsed = 2000 - game.frightenedRemaining;
+  const color = frightened && game.frightenedRemaining <= 2000 && Math.floor( blinkElapsed / 250 ) % 2 === 1
+    ? '#fff'
+    : frightened ? '#2121ff' : g.color;
 
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -121,6 +126,23 @@ function drawGhost( ctx, g, color ) {
   ctx.lineTo( left, bottom );
   ctx.closePath();
   ctx.fill();
+
+  if ( frightened ) {
+    ctx.fillStyle = '#ffb8ff';
+    ctx.fillRect( cx - 5, cy - 4, 3, 3 );
+    ctx.fillRect( cx + 2, cy - 4, 3, 3 );
+    ctx.strokeStyle = '#ffb8ff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo( cx - 5, cy + 3 );
+    ctx.lineTo( cx - 3, cy + 1 );
+    ctx.lineTo( cx - 1, cy + 3 );
+    ctx.lineTo( cx + 1, cy + 1 );
+    ctx.lineTo( cx + 3, cy + 3 );
+    ctx.lineTo( cx + 5, cy + 1 );
+    ctx.stroke();
+    return;
+  }
 
   // ojos mirando segun direccion
   const dir = DIRS[ g.dir ] || { x: 0, y: 0 };
@@ -136,6 +158,21 @@ function drawGhost( ctx, g, color ) {
     ctx.arc( cx + off + ex, cy - 1 + ey, 1.5, 0, Math.PI * 2 );
     ctx.fill();
   }
+}
+
+function drawFloatingScores( ctx, game ) {
+  ctx.save();
+  ctx.fillStyle = '#ffff00';
+  ctx.font = '12px "Courier New", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  game.floatingScores.forEach( ( floatingScore ) => {
+    const progress = 1 - floatingScore.remaining / 1000;
+    const { cx, cy } = cellCenter( floatingScore.x, floatingScore.y );
+    ctx.globalAlpha = floatingScore.remaining / 1000;
+    ctx.fillText( floatingScore.score, cx, cy - progress * 20 );
+  } );
+  ctx.restore();
 }
 
 function drawHUD( ctx, game, W ) {
@@ -160,7 +197,8 @@ function draw( ctx, game, frame ) {
   drawDoor( ctx, grid );
   drawDots( ctx, grid, game.playingTime );
   drawPacman( ctx, game.pacman, frame, game.powerPulseRemaining );
-  game.ghosts.forEach( ( g ) => drawGhost( ctx, g, g.color ) );
+  game.ghosts.forEach( ( g ) => drawGhost( ctx, g, game ) );
+  drawFloatingScores( ctx, game );
   drawHUD( ctx, game, W );
 }
 
